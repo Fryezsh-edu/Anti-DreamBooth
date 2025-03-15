@@ -42,6 +42,8 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, PretrainedConfig
+import time
+import shutil
 
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
@@ -574,6 +576,38 @@ class LatentsDataset(Dataset):
         return self.latents_cache[index], self.text_encoder_cache[index]
 
 
+def delete_all_except_dir(path, except_dir):
+    """
+    删除指定路径下除了特定文件夹外的所有文件和文件夹
+    
+    参数:
+    path: 要操作的路径
+    except_dir: 要保留的文件夹名称
+    """
+    # 确保路径存在
+    if not os.path.exists(path):
+        print(f"路径 {path} 不存在")
+        return
+    
+    # 获取所有文件和文件夹
+    items = os.listdir(path)
+    
+    for item in items:
+        item_path = os.path.join(path, item)
+        
+        # 跳过要保留的文件夹
+        if item == except_dir and os.path.isdir(item_path):
+            continue
+        
+        try:
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        except Exception as e:
+            print(f"删除 {item_path} 时出错: {e}")
+
+
 def main(args):
     logging_dir = Path(args.output_dir, args.logging_dir)
 
@@ -1003,8 +1037,9 @@ def main(args):
                         ckpt_pipeline.save_pretrained(save_path)
                         del ckpt_pipeline
                         prompts = args.inference_prompts.split(";")
-                        infer(save_path, prompts, n_img=16, bs=4, n_steps=100)
+                        infer(save_path, prompts, n_img=30, bs=6, n_steps=100)
                         logger.info(f"Saved state to {save_path}")
+                        delete_all_except_dir(save_path,"dreambooth")
 
             logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
             progress_bar.set_postfix(**logs)
@@ -1023,4 +1058,8 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_args()
+    start = time.perf_counter()
     main(args)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f"Dreambooth Training Time: {elapsed:.4f}")

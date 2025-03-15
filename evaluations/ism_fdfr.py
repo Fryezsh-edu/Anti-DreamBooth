@@ -4,6 +4,9 @@ import os
 import torch
 import torch.nn.functional as F
 import argparse
+import sys
+# TODO: optimize the packages structure
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from compute_idx_emb import compute_idx_embedding
 
 

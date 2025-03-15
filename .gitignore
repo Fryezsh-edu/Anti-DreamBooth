@@ -1,4 +1,11 @@
-data/
 __pycache__
 .vscode
 .DS_Store
+*.log
+.env
+
+
+data/
+outputs/
+stable-diffusion/
+test-infer/

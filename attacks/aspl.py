@@ -745,19 +745,25 @@ def main(args):
             args.max_f_train_steps,
         )
 
-        if (i + 1) % args.checkpointing_iterations == 0:
+        if (i + 1) % args.checkpointing_iterations == 0 or True:
             save_folder = f"{args.output_dir}/noise-ckpt/{i+1}"
             os.makedirs(save_folder, exist_ok=True)
             noised_imgs = perturbed_data.detach()
+            noise = noised_imgs - original_data
+
             img_names = [
                 str(instance_path).split("/")[-1]
                 for instance_path in list(Path(args.instance_data_dir_for_adversarial).iterdir())
             ]
-            for img_pixel, img_name in zip(noised_imgs, img_names):
-                save_path = os.path.join(save_folder, f"{i+1}_noise_{img_name}")
+            for img_pixel, noise_pixel, img_name in zip(noised_imgs, noise, img_names):
+                img_save_path = os.path.join(save_folder, f"{i+1}_noise_{img_name}")
+                noise_save_path = os.path.join(save_folder, f"{i+1}_noise_detach_{img_name}")
                 Image.fromarray(
                     (img_pixel * 127.5 + 128).clamp(0, 255).to(torch.uint8).permute(1, 2, 0).cpu().numpy()
-                ).save(save_path)
+                ).save(img_save_path)
+                # Image.fromarray(
+                #     (noise_pixel * 127.5 + 128).clamp(0, 255).to(torch.uint8).permute(1, 2, 0).cpu().numpy()
+                # ).save(noise_save_path)
             print(f"Saved noise at step {i+1} to {save_folder}")
 
 
